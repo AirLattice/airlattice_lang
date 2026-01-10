@@ -1,6 +1,8 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
+import { clearAuthToken } from "../utils/auth";
 
 export function Layout(props: {
   sidebarOpen: boolean;
@@ -9,6 +11,7 @@ export function Layout(props: {
   children: React.ReactNode;
   subtitle?: React.ReactNode;
 }) {
+  const navigate = useNavigate();
   return (
     <>
       <Transition.Root show={props.sidebarOpen} as={Fragment}>
@@ -107,10 +110,16 @@ export function Layout(props: {
             "OpenGPTs"
           )}
         </div>
-        <div className="inline-flex items-center rounded-md bg-pink-100 px-2 py-1 text-xs font-medium text-pink-700">
-          Research Preview: this is unauthenticated and all data can be found.
-          Do not use with sensitive data
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            clearAuthToken();
+            navigate("/login", { replace: true });
+          }}
+          className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Log out
+        </button>
       </div>
 
       <main className="pt-20 lg:pl-72 flex flex-col min-h-[calc(100%-56px)]">

@@ -1,10 +1,11 @@
 import { Config } from "../hooks/useConfigList";
+import { authFetch } from "../utils/authFetch";
 
 export async function getAssistant(
   assistantId: string,
 ): Promise<Config | null> {
   try {
-    const response = await fetch(`/assistants/${assistantId}`);
+    const response = await authFetch(`/assistants/${assistantId}`);
     if (!response.ok) {
       return null;
     }
@@ -17,7 +18,7 @@ export async function getAssistant(
 
 export async function getAssistants(): Promise<Config[] | null> {
   try {
-    const response = await fetch(`/assistants/`);
+    const response = await authFetch(`/assistants/`);
     if (!response.ok) {
       return null;
     }

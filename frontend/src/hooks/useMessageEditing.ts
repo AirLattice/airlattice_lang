@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { Message } from "../types";
 import { omit } from "lodash";
+import { authFetch } from "../utils/authFetch";
 
 export function useMessageEditing(
   threadId: string | undefined,
@@ -13,7 +14,7 @@ export function useMessageEditing(
   }, []);
   const commitEdits = useCallback(async () => {
     if (!threadId) return;
-    fetch(`/threads/${threadId}/state`, {
+    authFetch(`/threads/${threadId}/state`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ values: Object.values(editing) }),

@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useThreadAndAssistant } from "./hooks/useThreadAndAssistant.ts";
 import { Message } from "./types.ts";
 import { OrphanChat } from "./components/OrphanChat.tsx";
+import { authFetch } from "./utils/authFetch.ts";
 
 function App(props: { edit?: boolean }) {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ function App(props: { edit?: boolean }) {
           "config",
           JSON.stringify({ configurable: { thread_id } }),
         );
-        await fetch(`/ingest`, {
+        await authFetch(`/ingest`, {
           method: "POST",
           body: formData,
         });

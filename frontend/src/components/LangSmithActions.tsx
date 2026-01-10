@@ -5,6 +5,7 @@ import {
   CheckIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { authFetch } from "../utils/authFetch";
 
 export function LangSmithActions(props: { runId: string }) {
   const [state, setState] = useState<{
@@ -13,7 +14,7 @@ export function LangSmithActions(props: { runId: string }) {
   } | null>(null);
   const sendFeedback = async (score: number) => {
     setState({ score, inflight: true });
-    await fetch(`/runs/feedback`, {
+    await authFetch(`/runs/feedback`, {
       method: "POST",
       body: JSON.stringify({
         run_id: props.runId,

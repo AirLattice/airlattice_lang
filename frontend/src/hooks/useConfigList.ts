@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer } from "react";
 import orderBy from "lodash/orderBy";
 import { getAssistants } from "../api/assistants";
+import { authFetch } from "../utils/authFetch";
 
 export interface Config {
   assistant_id: string;
@@ -70,7 +71,7 @@ export function useConfigList(): ConfigListProps {
       isPublic: boolean,
       assistantId?: string,
     ): Promise<string> => {
-      const confResponse = await fetch(
+      const confResponse = await authFetch(
         assistantId ? `/assistants/${assistantId}` : "/assistants",
         {
           method: assistantId ? "PUT" : "POST",
@@ -92,7 +93,7 @@ export function useConfigList(): ConfigListProps {
           "config",
           JSON.stringify({ configurable: { assistant_id } }),
         );
-        await fetch(`/ingest`, {
+        await authFetch(`/ingest`, {
           method: "POST",
           body: formData,
         });
@@ -105,7 +106,7 @@ export function useConfigList(): ConfigListProps {
 
   const deleteConfig = useCallback(
     async (assistantId: string): Promise<void> => {
-      await fetch(`/assistants/${assistantId}`, {
+      await authFetch(`/assistants/${assistantId}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Message } from "../types";
 import { StreamState, mergeMessagesById } from "./useStreamState";
+import { authFetch } from "../utils/authFetch";
 
 async function getState(threadId: string) {
-  const { values, next } = await fetch(`/threads/${threadId}/state`, {
+  const { values, next } = await authFetch(`/threads/${threadId}/state`, {
     headers: {
       Accept: "application/json",
     },

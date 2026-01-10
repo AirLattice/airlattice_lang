@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer } from "react";
 import orderBy from "lodash/orderBy";
 import { Chat } from "../types";
+import { authFetch } from "../utils/authFetch";
 
 export interface ChatListProps {
   chats: Chat[] | null;
@@ -33,7 +34,7 @@ export function useChatList(): ChatListProps {
 
   useEffect(() => {
     async function fetchChats() {
-      const chats = await fetch("/threads/", {
+      const chats = await authFetch("/threads/", {
         headers: {
           Accept: "application/json",
         },
@@ -45,7 +46,7 @@ export function useChatList(): ChatListProps {
   }, []);
 
   const createChat = useCallback(async (name: string, assistant_id: string) => {
-    const response = await fetch(`/threads`, {
+    const response = await authFetch(`/threads`, {
       method: "POST",
       body: JSON.stringify({ assistant_id, name }),
       headers: {
@@ -60,7 +61,7 @@ export function useChatList(): ChatListProps {
 
   const updateChat = useCallback(
     async (thread_id: string, name: string, assistant_id: string | null) => {
-      const response = await fetch(`/threads/${thread_id}`, {
+      const response = await authFetch(`/threads/${thread_id}`, {
         method: "PUT",
         body: JSON.stringify({ assistant_id, name }),
         headers: {
@@ -77,7 +78,7 @@ export function useChatList(): ChatListProps {
 
   const deleteChat = useCallback(
     async (thread_id: string) => {
-      await fetch(`/threads/${thread_id}`, {
+      await authFetch(`/threads/${thread_id}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",

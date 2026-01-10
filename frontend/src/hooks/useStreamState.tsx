@@ -2,6 +2,7 @@
 import { useCallback, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { Message } from "../types";
+import { getAuthToken } from "../utils/auth";
 
 export interface StreamState {
   status: "inflight" | "error" | "done";
@@ -33,10 +34,18 @@ export function useStreamState(): StreamStateProps {
       setController(controller);
       setCurrent({ status: "inflight", messages: input || [] });
 
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       await fetchEventSource("/runs/stream", {
         signal: controller.signal,
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ input, thread_id, config }),
         openWhenHidden: true,
         onmessage(msg) {

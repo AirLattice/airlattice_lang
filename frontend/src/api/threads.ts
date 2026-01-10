@@ -1,8 +1,9 @@
 import { Chat } from "../types";
+import { authFetch } from "../utils/authFetch";
 
 export async function getThread(threadId: string): Promise<Chat | null> {
   try {
-    const response = await fetch(`/threads/${threadId}`);
+    const response = await authFetch(`/threads/${threadId}`);
     if (!response.ok) {
       return null;
     }
