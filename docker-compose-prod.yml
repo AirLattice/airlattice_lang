@@ -33,7 +33,31 @@ services:
     depends_on:
       postgres-setup:
         condition: service_completed_successfully
+      embeddings:
+        condition: service_started
     env_file:
       - .env
     environment:
       POSTGRES_HOST: "postgres"
+  embeddings:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    environment:
+      MODEL_ID: /data/BAAI/bge-m3
+      HF_ENDPOINT: https://huggingface.co
+      HF_HOME: /data
+      HUGGINGFACE_HUB_CACHE: /data
+      HF_HUB_ENABLE_HF_TRANSFER: "1"
+    command:
+      [
+        "--model-id",
+        "/data/BAAI/bge-m3",
+        "--port",
+        "8080",
+        "--auto-truncate",
+        "--huggingface-hub-cache",
+        "/data"
+      ]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./embeddings-cache:/data

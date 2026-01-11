@@ -25,7 +25,7 @@ def test_ingestion_runnable() -> None:
     file = UploadFile(filename="testfile.txt", file=file_data)
 
     # Convert the file to blob
-    blob = convert_ingestion_input_to_blob(file)
+    blob, _ = convert_ingestion_input_to_blob(file)
     ids = runnable.invoke(blob)
     assert len(ids) == 1
 

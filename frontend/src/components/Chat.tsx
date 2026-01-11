@@ -13,6 +13,7 @@ import { useThreadAndAssistant } from "../hooks/useThreadAndAssistant.ts";
 import { useMessageEditing } from "../hooks/useMessageEditing.ts";
 import { MessageEditor } from "./MessageEditor.tsx";
 import { Message } from "../types.ts";
+import { cn } from "../utils/cn";
 
 interface ChatProps extends Pick<StreamStateProps, "stream" | "stopStream"> {
   startStream: (
@@ -20,6 +21,9 @@ interface ChatProps extends Pick<StreamStateProps, "stream" | "stopStream"> {
     thread_id: string,
     assistantType: string,
   ) => Promise<void>;
+  ingestProgress?: number | null;
+  ingestError?: string | null;
+  onCancelIngest?: () => void;
 }
 
 function usePrevious<T>(value: T): T | undefined {
@@ -91,7 +95,12 @@ export function Chat(props: ChatProps) {
   if (!currentChat || !assistantConfig) return <div>No data.</div>;
 
   return (
-    <div className="flex-1 flex flex-col items-stretch pb-[76px] pt-2">
+    <div
+      className={cn(
+        "flex-1 flex flex-col items-stretch pb-[76px] pt-2",
+        typeof props.ingestProgress === "number" && "pb-[140px]",
+      )}
+    >
       {messages?.map((msg, i) =>
         editing[msg.id] ? (
           <MessageEditor
@@ -159,6 +168,10 @@ export function Chat(props: ChatProps) {
             inflight={props.stream?.status === "inflight"}
             currentConfig={assistantConfig}
             currentChat={currentChat}
+            ingestProgress={props.ingestProgress}
+            ingestError={props.ingestError}
+            tokenUsage={props.stream?.usage ?? null}
+            onCancelIngest={props.onCancelIngest}
           />
         )}
       </div>

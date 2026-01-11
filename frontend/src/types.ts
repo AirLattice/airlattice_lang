@@ -17,6 +17,18 @@ export interface Message {
   name?: string;
   tool_calls?: ToolCall[];
   example: boolean;
+  usage_metadata?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+  } | null;
+}
+
+export interface TokenUsage {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  estimated?: boolean;
 }
 
 export interface Chat {

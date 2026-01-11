@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { Message } from "../types";
+import { Message, TokenUsage } from "../types";
 import { getAuthToken } from "../utils/auth";
 
 export interface StreamState {
   status: "inflight" | "error" | "done";
   messages?: Message[] | Record<string, any>;
   run_id?: string;
+  usage?: TokenUsage | null;
 }
 
 export interface StreamStateProps {
@@ -24,6 +25,22 @@ export function useStreamState(): StreamStateProps {
   const [current, setCurrent] = useState<StreamState | null>(null);
   const [controller, setController] = useState<AbortController | null>(null);
 
+  const extractUsage = (msgs: Message[] | Record<string, any> | null | undefined) => {
+    const list = Array.isArray(msgs) ? msgs : msgs?.messages;
+    if (!Array.isArray(list)) return null;
+    for (let i = list.length - 1; i >= 0; i -= 1) {
+      const usage = list[i]?.usage_metadata;
+      if (usage?.total_tokens) {
+        return {
+          prompt_tokens: usage.input_tokens,
+          completion_tokens: usage.output_tokens,
+          total_tokens: usage.total_tokens,
+        } as TokenUsage;
+      }
+    }
+    return null;
+  };
+
   const startStream = useCallback(
     async (
       input: Message[] | Record<string, any> | null,
@@ -32,7 +49,11 @@ export function useStreamState(): StreamStateProps {
     ) => {
       const controller = new AbortController();
       setController(controller);
-      setCurrent({ status: "inflight", messages: input || [] });
+      setCurrent({
+        status: "inflight",
+        messages: input || [],
+        usage: null,
+      });
 
       const token = getAuthToken();
       const headers: Record<string, string> = {
@@ -51,10 +72,12 @@ export function useStreamState(): StreamStateProps {
         onmessage(msg) {
           if (msg.event === "data") {
             const messages = JSON.parse(msg.data);
+            const inferredUsage = extractUsage(messages);
             setCurrent((current) => ({
               status: "inflight" as StreamState["status"],
               messages: mergeMessagesById(current?.messages, messages),
               run_id: current?.run_id,
+              usage: current?.usage ?? inferredUsage,
             }));
           } else if (msg.event === "metadata") {
             const { run_id } = JSON.parse(msg.data);
@@ -62,12 +85,22 @@ export function useStreamState(): StreamStateProps {
               status: "inflight",
               messages: current?.messages,
               run_id: run_id,
+              usage: current?.usage,
+            }));
+          } else if (msg.event === "usage") {
+            const usage = JSON.parse(msg.data);
+            setCurrent((current) => ({
+              status: current?.status ?? "inflight",
+              messages: current?.messages,
+              run_id: current?.run_id,
+              usage,
             }));
           } else if (msg.event === "error") {
             setCurrent((current) => ({
               status: "error",
               messages: current?.messages,
               run_id: current?.run_id,
+              usage: current?.usage,
             }));
           }
         },
@@ -76,6 +109,7 @@ export function useStreamState(): StreamStateProps {
             status: current?.status === "error" ? current.status : "done",
             messages: current?.messages,
             run_id: current?.run_id,
+            usage: current?.usage,
           }));
           setController(null);
         },
@@ -84,6 +118,7 @@ export function useStreamState(): StreamStateProps {
             status: "error",
             messages: current?.messages,
             run_id: current?.run_id,
+            usage: current?.usage,
           }));
           setController(null);
           throw error;
@@ -101,12 +136,14 @@ export function useStreamState(): StreamStateProps {
         setCurrent((current) => ({
           status: "done",
           run_id: current?.run_id,
+          usage: current?.usage,
         }));
       } else {
         setCurrent((current) => ({
           status: "done",
           messages: current?.messages,
           run_id: current?.run_id,
+          usage: current?.usage,
         }));
       }
     },

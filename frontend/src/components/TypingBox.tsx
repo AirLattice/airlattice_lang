@@ -50,6 +50,15 @@ export default function TypingBox(props: {
   inflight?: boolean;
   currentConfig: Config;
   currentChat: Chat | null;
+  ingestProgress?: number | null;
+  ingestError?: string | null;
+  tokenUsage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    estimated?: boolean;
+  } | null;
+  onCancelIngest?: () => void;
 }) {
   const [inflight, setInflight] = useState(false);
   const isInflight = props.inflight || inflight;
@@ -92,7 +101,7 @@ export default function TypingBox(props: {
     });
   }, []);
 
-  const { open } = useDropzone({
+  const { open, getRootProps, getInputProps, fileRejections } = useDropzone({
     ...DROPZONE_CONFIG,
     onDrop,
     // Disable click and keydown behavior
@@ -134,6 +143,43 @@ export default function TypingBox(props: {
           {FilesToShow}
         </div>
       ) : null}
+      {typeof props.ingestProgress === "number" && (
+        <div className="mt-2 text-xs text-blue-700">
+          Uploading and indexing files: {props.ingestProgress.toFixed(1)}%
+        </div>
+      )}
+      {props.ingestError && (
+        <div className="mt-2 text-xs text-red-600">{props.ingestError}</div>
+      )}
+      {typeof props.ingestProgress === "number" && (
+        <button
+          type="button"
+          onClick={props.onCancelIngest}
+          className="mt-2 inline-flex items-center rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+        >
+          Cancel upload
+        </button>
+      )}
+      <div className="mt-2 text-xs text-gray-500">
+        Tokens:{" "}
+        {props.tokenUsage?.total_tokens
+          ? `${props.tokenUsage.estimated ? "~" : ""}${
+              props.tokenUsage.prompt_tokens ?? 0
+            } prompt, ${props.tokenUsage.estimated ? "~" : ""}${
+              props.tokenUsage.completion_tokens ?? 0
+            } completion, ${props.tokenUsage.estimated ? "~" : ""}${
+              props.tokenUsage.total_tokens
+            } total${props.tokenUsage.estimated ? " (est)" : ""}`
+          : "unavailable"}
+      </div>
+      {fileRejections.length > 0 && (
+        <div className="mt-2 text-xs text-red-600">
+          {fileRejections[0]?.errors[0]?.message || "File rejected."}
+        </div>
+      )}
+      <div {...getRootProps({ className: "sr-only" })}>
+        <input {...getInputProps()} />
+      </div>
       <form
         className="mt-2 flex rounded-md shadow-sm"
         onSubmit={async (e) => {

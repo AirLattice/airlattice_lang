@@ -32,6 +32,8 @@ def get_openai_llm(model: str = "gpt-3.5-turbo", azure: bool = False):
                 http_client=http_client,
                 model=openai_model,
                 temperature=0,
+                streaming=True,
+                stream_options={"include_usage": True},
             )
         except Exception as e:
             logger.error(
@@ -44,6 +46,8 @@ def get_openai_llm(model: str = "gpt-3.5-turbo", azure: bool = False):
                 azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
                 openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
                 openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
+                streaming=True,
+                stream_options={"include_usage": True},
             )
     else:
         llm = AzureChatOpenAI(
@@ -53,6 +57,8 @@ def get_openai_llm(model: str = "gpt-3.5-turbo", azure: bool = False):
             azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
             openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
             openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            streaming=True,
+            stream_options={"include_usage": True},
         )
     return llm
 

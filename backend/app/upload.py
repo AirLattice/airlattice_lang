@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import mimetypes
 import os
-from typing import BinaryIO, List, Optional
+from typing import BinaryIO, Callable, List, Optional
 
 from fastapi import UploadFile
 from langchain_community.vectorstores.pgvector import PGVector
@@ -26,6 +26,7 @@ from langchain_openai import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 from pydantic import ConfigDict
 
+from app.embeddings import get_embeddings_client
 from app.ingest import ingest_blob
 from app.parsing import MIMETYPE_BASED_PARSER
 
@@ -66,7 +67,7 @@ def _guess_mimetype(file_name: str, file_bytes: bytes) -> str:
     return "application/octet-stream"
 
 
-def convert_ingestion_input_to_blob(file: UploadFile) -> Blob:
+def convert_ingestion_input_to_blob(file: UploadFile) -> tuple[Blob, int]:
     """Convert ingestion input to blob."""
     file_data = file.file.read()
     file_name = file.filename
@@ -76,19 +77,39 @@ def convert_ingestion_input_to_blob(file: UploadFile) -> Blob:
         raise TypeError(f"Expected string for file name, got {type(file_name)}")
 
     mimetype = _guess_mimetype(file_name, file_data)
-    return Blob.from_data(
+    blob = Blob.from_data(
         data=file_data,
         path=file_name,
         mime_type=mimetype,
     )
+    return blob, len(file_data)
 
 
-def _determine_azure_or_openai_embeddings() -> PGVector:
+def _collection_name() -> str:
+    provider = os.environ.get("EMBEDDINGS_PROVIDER", "").lower()
+    if provider == "local":
+        model_id = os.environ.get("EMBEDDINGS_MODEL_ID", "local").lower()
+        sanitized = model_id.replace("/", "_").replace(":", "_")
+        return f"opengpts_local_{sanitized}"
+    if os.environ.get("AZURE_OPENAI_API_KEY"):
+        return "opengpts_azure_embeddings"
+    return "opengpts_openai_embeddings"
+
+
+def _determine_embeddings() -> PGVector:
+    if os.environ.get("EMBEDDINGS_PROVIDER", "").lower() == "local":
+        return PGVector(
+            connection_string=PG_CONNECTION_STRING,
+            embedding_function=get_embeddings_client(),
+            use_jsonb=True,
+            collection_name=_collection_name(),
+        )
     if os.environ.get("OPENAI_API_KEY"):
         return PGVector(
             connection_string=PG_CONNECTION_STRING,
             embedding_function=OpenAIEmbeddings(),
             use_jsonb=True,
+            collection_name=_collection_name(),
         )
     if os.environ.get("AZURE_OPENAI_API_KEY"):
         return PGVector(
@@ -101,9 +122,10 @@ def _determine_azure_or_openai_embeddings() -> PGVector:
                 openai_api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
             ),
             use_jsonb=True,
+            collection_name=_collection_name(),
         )
     raise ValueError(
-        "Either OPENAI_API_KEY or AZURE_OPENAI_API_KEY needs to be set for embeddings to work."
+        "Set EMBEDDINGS_PROVIDER=local with EMBEDDINGS_URL, or configure OPENAI_API_KEY/AZURE_OPENAI_API_KEY."
     )
 
 
@@ -131,13 +153,24 @@ class IngestRunnable(RunnableSerializable[BinaryIO, List[str]]):
             )
         return self.assistant_id if self.assistant_id is not None else self.thread_id
 
-    def invoke(self, blob: Blob, config: Optional[RunnableConfig] = None) -> List[str]:
+    def invoke(
+        self,
+        blob: Blob,
+        config: Optional[RunnableConfig] = None,
+        *,
+        progress_callback: Optional[Callable[[int], None]] = None,
+        should_cancel: Optional[Callable[[], bool]] = None,
+    ) -> List[str]:
         out = ingest_blob(
             blob,
             MIMETYPE_BASED_PARSER,
             self.text_splitter,
             self.vectorstore,
             self.namespace,
+            batch_size=5,
+            max_batch_chars=50_000,
+            progress_callback=progress_callback,
+            should_cancel=should_cancel,
         )
         return out
 
@@ -150,7 +183,7 @@ PG_CONNECTION_STRING = PGVector.connection_string_from_db_params(
     user=os.environ["POSTGRES_USER"],
     password=os.environ["POSTGRES_PASSWORD"],
 )
-vstore = _determine_azure_or_openai_embeddings()
+vstore = _determine_embeddings()
 
 
 ingest_runnable = IngestRunnable(

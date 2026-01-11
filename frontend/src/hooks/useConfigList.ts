@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer } from "react";
 import orderBy from "lodash/orderBy";
 import { getAssistants } from "../api/assistants";
 import { authFetch } from "../utils/authFetch";
+import { startIngest } from "../utils/ingest";
 
 export interface Config {
   assistant_id: string;
@@ -93,10 +94,7 @@ export function useConfigList(): ConfigListProps {
           "config",
           JSON.stringify({ configurable: { assistant_id } }),
         );
-        await authFetch(`/ingest`, {
-          method: "POST",
-          body: formData,
-        });
+        await startIngest(formData);
       }
       setConfigs({ ...savedConfig, mine: true });
       return savedConfig.assistant_id;

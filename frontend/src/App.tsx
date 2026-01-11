@@ -17,11 +17,16 @@ import { useNavigate } from "react-router-dom";
 import { useThreadAndAssistant } from "./hooks/useThreadAndAssistant.ts";
 import { Message } from "./types.ts";
 import { OrphanChat } from "./components/OrphanChat.tsx";
-import { authFetch } from "./utils/authFetch.ts";
+import { cancelIngest, startIngest } from "./utils/ingest.ts";
 
 function App(props: { edit?: boolean }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [ingestProgress, setIngestProgress] = useState<number | null>(null);
+  const [ingestError, setIngestError] = useState<string | null>(null);
+  const [ingestController, setIngestController] =
+    useState<AbortController | null>(null);
+  const [ingestJobId, setIngestJobId] = useState<string | null>(null);
   const { chats, createChat, updateChat, deleteChat } = useChatList();
   const { configs, saveConfig, deleteConfig } = useConfigList();
   const { startStream, stopStream, stream } = useStreamState();
@@ -38,18 +43,43 @@ function App(props: { edit?: boolean }) {
     ) => {
       const files = message?.files || [];
       if (files.length > 0) {
-        const formData = files.reduce((formData, file) => {
-          formData.append("files", file);
-          return formData;
-        }, new FormData());
-        formData.append(
-          "config",
-          JSON.stringify({ configurable: { thread_id } }),
-        );
-        await authFetch(`/ingest`, {
-          method: "POST",
-          body: formData,
-        });
+        setIngestProgress(0);
+        setIngestError(null);
+        const controller = new AbortController();
+        setIngestController(controller);
+        setIngestJobId(null);
+        try {
+          const formData = files.reduce((formData, file) => {
+            formData.append("files", file);
+            return formData;
+          }, new FormData());
+          formData.append(
+            "config",
+            JSON.stringify({ configurable: { thread_id } }),
+          );
+          await startIngest(
+            formData,
+            (progress) => {
+              const percent = Math.round(progress * 1000) / 10;
+              setIngestProgress(Math.min(99.9, percent));
+            },
+            controller.signal,
+            (jobId) => setIngestJobId(jobId),
+          );
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            setIngestError("Upload canceled.");
+            return;
+          }
+          setIngestError(
+            error instanceof Error ? error.message : "Ingest failed.",
+          );
+          return;
+        } finally {
+          setIngestProgress(null);
+          setIngestController(null);
+          setIngestJobId(null);
+        }
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -145,7 +175,27 @@ function App(props: { edit?: boolean }) {
       }
     >
       {currentChat && assistantConfig && (
-        <Chat startStream={startTurn} stopStream={stopStream} stream={stream} />
+        <Chat
+          startStream={startTurn}
+          stopStream={stopStream}
+          stream={stream}
+          ingestProgress={ingestProgress}
+          ingestError={ingestError}
+          onCancelIngest={async () => {
+            if (ingestJobId) {
+              try {
+                await cancelIngest(ingestJobId);
+              } catch (error) {
+                setIngestError(
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to cancel ingest.",
+                );
+              }
+            }
+            ingestController?.abort();
+          }}
+        />
       )}
       {currentChat && !assistantConfig && (
         <OrphanChat chat={currentChat} updateChat={updateChat} />

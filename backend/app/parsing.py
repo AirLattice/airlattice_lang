@@ -7,6 +7,7 @@ from langchain_community.document_loaders.parsers.txt import TextParser
 HANDLERS = {
     "application/pdf": PDFMinerParser(),
     "text/plain": TextParser(),
+    "text/csv": TextParser(),
     "text/html": BS4HTMLParser(),
     "application/msword": MsWordParser(),
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (

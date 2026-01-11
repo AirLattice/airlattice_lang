@@ -31,9 +31,6 @@ services:
       context: backend
     ports:
       - "8100:8000" # Backend is accessible on localhost:8100
-    depends_on:
-      postgres-setup:
-        condition: service_completed_successfully
     env_file:
       - .env
     volumes:
@@ -42,6 +39,33 @@ services:
       POSTGRES_HOST: "postgres"
     command:
       - --reload
+    depends_on:
+      postgres-setup:
+        condition: service_completed_successfully
+      embeddings:
+        condition: service_started
+  embeddings:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    environment:
+      MODEL_ID: /data/BAAI/bge-m3
+      HF_ENDPOINT: https://huggingface.co
+      HF_HOME: /data
+      HUGGINGFACE_HUB_CACHE: /data
+      HF_HUB_ENABLE_HF_TRANSFER: "1"
+    command:
+      [
+        "--model-id",
+        "/data/BAAI/bge-m3",
+        "--port",
+        "8080",
+        "--auto-truncate",
+        "--huggingface-hub-cache",
+        "/data"
+      ]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./embeddings-cache:/data
   frontend:
     container_name: opengpts-frontend
     build:

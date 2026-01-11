@@ -28,11 +28,12 @@ export const DROPZONE_CONFIG = {
   multiple: true,
   accept: {
     "text/*": [".txt", ".htm", ".html"],
+    "text/csv": [".csv"],
     "application/pdf": [".pdf"],
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
       ".docx",
     ],
     "application/msword": [".doc"],
   },
-  maxSize: 10_000_000, // Up to 10 MB file size.
+  maxSize: 100_000_000, // Up to 100 MB file size.
 };
