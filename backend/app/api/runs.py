@@ -180,9 +180,7 @@ async def create_run(
     background_tasks: BackgroundTasks,
 ):
     """Create a run."""
-    input_, config, user_message = await _run_input_and_config(
-        payload, user.user_id
-    )
+    input_, config, user_message = await _run_input_and_config(payload, user.user_id)
     if user_message:
         background_tasks.add_task(
             store_user_message,
@@ -209,9 +207,7 @@ async def stream_run(
     background_tasks: BackgroundTasks,
 ):
     """Create a run."""
-    input_, config, user_message = await _run_input_and_config(
-        payload, user.user_id
-    )
+    input_, config, user_message = await _run_input_and_config(payload, user.user_id)
     if user_message:
         background_tasks.add_task(
             store_user_message,

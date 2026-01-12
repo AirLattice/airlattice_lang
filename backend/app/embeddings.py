@@ -33,6 +33,8 @@ def get_embeddings_client() -> Embeddings:
     if provider == "local":
         base_url = os.environ.get("EMBEDDINGS_URL")
         if not base_url:
-            raise ValueError("EMBEDDINGS_URL must be set when EMBEDDINGS_PROVIDER=local")
+            raise ValueError(
+                "EMBEDDINGS_URL must be set when EMBEDDINGS_PROVIDER=local"
+            )
         return LocalEmbeddings(base_url)
     raise ValueError(f"Unsupported embeddings provider: {provider}")

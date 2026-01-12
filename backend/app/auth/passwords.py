@@ -32,7 +32,9 @@ def validate_password(password: str, policy: PasswordPolicy = DEFAULT_POLICY) ->
 
 def hash_password(password: str) -> str:
     salt = secrets.token_bytes(SALT_BYTES)
-    dk = hashlib.pbkdf2_hmac(HASH_NAME, password.encode("utf-8"), salt, PBKDF2_ITERATIONS)
+    dk = hashlib.pbkdf2_hmac(
+        HASH_NAME, password.encode("utf-8"), salt, PBKDF2_ITERATIONS
+    )
     encoded_salt = base64.b64encode(salt).decode("ascii")
     encoded_hash = base64.b64encode(dk).decode("ascii")
     return f"pbkdf2_{HASH_NAME}${PBKDF2_ITERATIONS}${encoded_salt}${encoded_hash}"

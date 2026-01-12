@@ -167,12 +167,11 @@ async def signup(payload: SignupRequest) -> TokenResponse:
 
 
 @router.post("/account/password")
-async def change_password(
-    payload: ChangePasswordRequest, user: AuthedUser
-) -> dict:
+async def change_password(payload: ChangePasswordRequest, user: AuthedUser) -> dict:
     if settings.auth_type != AuthType.JWT_LOCAL:
         raise HTTPException(
-            status_code=400, detail="AUTH_TYPE must be jwt_local to use /account/password."
+            status_code=400,
+            detail="AUTH_TYPE must be jwt_local to use /account/password.",
         )
 
     record = await storage.get_user_by_sub(user.sub)
@@ -190,7 +189,8 @@ async def change_password(
 async def delete_account(payload: DeleteAccountRequest, user: AuthedUser) -> dict:
     if settings.auth_type != AuthType.JWT_LOCAL:
         raise HTTPException(
-            status_code=400, detail="AUTH_TYPE must be jwt_local to use /account/delete."
+            status_code=400,
+            detail="AUTH_TYPE must be jwt_local to use /account/delete.",
         )
 
     record = await storage.get_user_by_sub(user.sub)

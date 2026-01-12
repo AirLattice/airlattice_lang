@@ -1,5 +1,14 @@
 import functools
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, Optional, Sequence, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import orjson
 import structlog
@@ -44,9 +53,7 @@ def _estimate_usage(messages: dict[str, BaseMessage]) -> Optional[dict]:
         return None
     last_ai = ai_messages[-1]
     prompt_text = "\n".join(
-        _message_to_text(msg)
-        for msg in messages.values()
-        if msg is not last_ai
+        _message_to_text(msg) for msg in messages.values() if msg is not last_ai
     )
     completion_text = _message_to_text(last_ai)
     try:

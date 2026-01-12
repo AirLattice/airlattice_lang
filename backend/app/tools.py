@@ -212,9 +212,7 @@ If the user is referencing particular files, that is often a good hint that info
 If the user asks a vague question, they are likely meaning to look up info from this retriever, and you should call it!"""
 
 
-def get_retriever(
-    assistant_id: str, thread_id: str, user_id: Optional[str] = None
-):
+def get_retriever(assistant_id: str, thread_id: str, user_id: Optional[str] = None):
     namespaces = [namespace for namespace in (assistant_id, thread_id) if namespace]
     if user_id:
         namespaces.append(memory_namespace(user_id))
