@@ -266,3 +266,47 @@ async def get_or_create_user(sub: str) -> tuple[User, bool]:
             'INSERT INTO "user" (sub) VALUES ($1) RETURNING *', sub
         )
         return User(**record), True
+
+
+async def get_user_by_sub(sub: str) -> Optional[dict]:
+    async with get_pg_pool().acquire() as conn:
+        record = await conn.fetchrow('SELECT * FROM "user" WHERE sub = $1', sub)
+        return dict(record) if record else None
+
+
+async def create_user_with_password(sub: str, password_hash: str) -> User:
+    async with get_pg_pool().acquire() as conn:
+        record = await conn.fetchrow(
+            'INSERT INTO "user" (sub, password_hash) VALUES ($1, $2) RETURNING *',
+            sub,
+            password_hash,
+        )
+        return User(**record)
+
+
+async def set_user_password(user_id: str, password_hash: str) -> User:
+    async with get_pg_pool().acquire() as conn:
+        record = await conn.fetchrow(
+            'UPDATE "user" SET password_hash = $1 WHERE user_id = $2 RETURNING *',
+            password_hash,
+            user_id,
+        )
+        return User(**record)
+
+
+async def delete_user_data(user_id: str) -> None:
+    async with get_pg_pool().acquire() as conn:
+        async with conn.transaction():
+            thread_rows = await conn.fetch(
+                "SELECT thread_id FROM thread WHERE user_id = $1",
+                user_id,
+            )
+            if thread_rows:
+                thread_ids_text = [str(row["thread_id"]) for row in thread_rows]
+                await conn.execute(
+                    "DELETE FROM checkpoints WHERE thread_id = ANY($1::text[])",
+                    thread_ids_text,
+                )
+            await conn.execute("DELETE FROM thread WHERE user_id = $1", user_id)
+            await conn.execute("DELETE FROM assistant WHERE user_id = $1", user_id)
+            await conn.execute('DELETE FROM "user" WHERE user_id = $1', user_id)

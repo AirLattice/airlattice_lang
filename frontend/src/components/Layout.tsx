@@ -1,8 +1,9 @@
-import { Fragment } from "react";
+import { FormEvent, Fragment, useEffect, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { clearAuthToken } from "../utils/auth";
+import { authFetch } from "../utils/authFetch";
 
 export function Layout(props: {
   sidebarOpen: boolean;
@@ -12,6 +13,108 @@ export function Layout(props: {
   subtitle?: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [userSub, setUserSub] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    authFetch("/me", { headers: { Accept: "application/json" } })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((data) => {
+        if (active && data?.sub) {
+          setUserSub(data.sub);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleLogout = () => {
+    clearAuthToken();
+    navigate("/login", { replace: true });
+  };
+
+  const openAccount = () => {
+    setAccountOpen(true);
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setDeleteError(null);
+  };
+
+  const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setPasswordBusy(true);
+    try {
+      const response = await authFetch("/account/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+          new_password_confirm: newPasswordConfirm,
+        }),
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Failed to update password");
+      }
+      setCurrentPassword("");
+      setNewPassword("");
+      setNewPasswordConfirm("");
+      setPasswordSuccess("Password updated.");
+    } catch (error) {
+      setPasswordError(
+        error instanceof Error ? error.message : "Failed to update password",
+      );
+    } finally {
+      setPasswordBusy(false);
+    }
+  };
+
+  const submitDeleteAccount = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setDeleteError(null);
+    if (!window.confirm("Delete your account and all data? This cannot be undone.")) {
+      return;
+    }
+    setDeleteBusy(true);
+    try {
+      const response = await authFetch("/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Failed to delete account");
+      }
+      clearAuthToken();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : "Failed to delete account",
+      );
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
   return (
     <>
       <Transition.Root show={props.sidebarOpen} as={Fragment}>
@@ -110,17 +213,144 @@ export function Layout(props: {
             "OpenGPTs"
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            clearAuthToken();
-            navigate("/login", { replace: true });
-          }}
-          className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-        >
-          Log out
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={openAccount}
+            className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          >
+            {userSub ?? "Account"}
+          </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Log out
+          </button>
+        </div>
       </div>
+
+      <Transition.Root show={accountOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={setAccountOpen}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-200"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-150"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-gray-900/60" />
+          </Transition.Child>
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-200"
+                enterFrom="opacity-0 translate-y-2"
+                enterTo="opacity-100 translate-y-0"
+                leave="ease-in duration-150"
+                leaveFrom="opacity-100 translate-y-0"
+                leaveTo="opacity-0 translate-y-2"
+              >
+                <Dialog.Panel className="w-full max-w-md transform rounded-xl bg-white p-6 text-left shadow-xl transition-all">
+                  <Dialog.Title className="text-base font-semibold text-gray-900">
+                    Account settings
+                  </Dialog.Title>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Signed in as {userSub ?? "your account"}.
+                  </p>
+
+                  <form className="mt-5 space-y-4" onSubmit={submitPasswordChange}>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Current password
+                      </label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(event) => setCurrentPassword(event.target.value)}
+                        className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        autoComplete="current-password"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        New password
+                      </label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                        className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        autoComplete="new-password"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Confirm new password
+                      </label>
+                      <input
+                        type="password"
+                        value={newPasswordConfirm}
+                        onChange={(event) => setNewPasswordConfirm(event.target.value)}
+                        className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        autoComplete="new-password"
+                        required
+                      />
+                    </div>
+                    {passwordError && (
+                      <p className="text-sm text-red-600">{passwordError}</p>
+                    )}
+                    {passwordSuccess && (
+                      <p className="text-sm text-emerald-600">
+                        {passwordSuccess}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={passwordBusy}
+                      className="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Update password
+                    </button>
+                  </form>
+
+                  <div className="my-6 h-px bg-gray-200" />
+
+                  <form className="space-y-3" onSubmit={submitDeleteAccount}>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Confirm password to delete account
+                    </label>
+                    <input
+                      type="password"
+                      value={deletePassword}
+                      onChange={(event) => setDeletePassword(event.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
+                      autoComplete="current-password"
+                      required
+                    />
+                    {deleteError && (
+                      <p className="text-sm text-red-600">{deleteError}</p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={deleteBusy}
+                      className="w-full rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Delete account
+                    </button>
+                  </form>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition.Root>
 
       <main className="pt-20 lg:pl-72 flex flex-col min-h-[calc(100%-56px)]">
         <div className="px-4 sm:px-6 lg:px-8 flex-1">{props.children}</div>

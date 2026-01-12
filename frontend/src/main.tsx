@@ -8,6 +8,7 @@ import { NotFound } from "./components/NotFound.tsx";
 import { AuthGate } from "./components/AuthGate.tsx";
 import { Login } from "./pages/Login.tsx";
 import { MemoryPage } from "./pages/Memory.tsx";
+import { Signup } from "./pages/Signup.tsx";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route element={<AuthGate />}>
             <Route path="/thread/:chatId" element={<App />} />
             <Route path="/memory" element={<MemoryPage />} />
