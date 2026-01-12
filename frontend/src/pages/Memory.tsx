@@ -20,6 +20,40 @@ export function MemoryPage() {
   const { chats, deleteChat } = useChatList();
   const { configs } = useConfigList();
   const { items, loading, error, remove, clear } = useMemory();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggleSelection = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (!items?.length) return;
+    setSelected(new Set(items.map((item) => item.id)));
+  };
+
+  const clearSelection = () => {
+    setSelected(new Set());
+  };
+
+  const deleteSelected = async () => {
+    if (!selected.size) return;
+    if (!window.confirm("Delete selected memories?")) {
+      return;
+    }
+    const ids = Array.from(selected);
+    for (const id of ids) {
+      await remove(id);
+    }
+    setSelected(new Set());
+  };
 
   const selectChat = useCallback(
     async (id: string | null) => {
@@ -66,7 +100,40 @@ export function MemoryPage() {
             This list stores everything you have said. It is used to answer
             future questions across all chats.
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={selectAll}
+              className={cn(
+                "inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50",
+                !items?.length && "opacity-50 cursor-not-allowed",
+              )}
+              disabled={!items?.length}
+            >
+              Select all
+            </button>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className={cn(
+                "inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50",
+                !selected.size && "opacity-50 cursor-not-allowed",
+              )}
+              disabled={!selected.size}
+            >
+              Clear selection
+            </button>
+            <button
+              type="button"
+              onClick={deleteSelected}
+              className={cn(
+                "inline-flex items-center rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 shadow-sm hover:bg-red-100",
+                !selected.size && "opacity-50 cursor-not-allowed",
+              )}
+              disabled={!selected.size}
+            >
+              Delete selected
+            </button>
             <button
               type="button"
               onClick={async () => {
@@ -107,15 +174,28 @@ export function MemoryPage() {
               className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
             >
               <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>
-                  {item.role ? item.role.toUpperCase() : "MEMORY"} ·{" "}
-                  {formatTimestamp(item.created_at)}
-                </span>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(item.id)}
+                    onChange={() => toggleSelection(item.id)}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span>
+                    {item.role ? item.role.toUpperCase() : "MEMORY"} ·{" "}
+                    {formatTimestamp(item.created_at)}
+                  </span>
+                </label>
                 <button
                   type="button"
                   onClick={async () => {
                     if (window.confirm("Delete this memory?")) {
                       await remove(item.id);
+                      setSelected((prev) => {
+                        const next = new Set(prev);
+                        next.delete(item.id);
+                        return next;
+                      });
                     }
                   }}
                   className="text-gray-500 hover:text-red-600"
