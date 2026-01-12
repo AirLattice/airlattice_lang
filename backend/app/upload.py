@@ -33,6 +33,9 @@ from app.parsing import MIMETYPE_BASED_PARSER
 
 def _guess_mimetype(file_name: str, file_bytes: bytes) -> str:
     """Guess the mime-type of a file based on its name or bytes."""
+    if file_name.lower().endswith(".gpx"):
+        return "application/gpx+xml"
+
     # Guess based on the file extension
     mime_type, _ = mimetypes.guess_type(file_name)
 

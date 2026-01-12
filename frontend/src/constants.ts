@@ -27,6 +27,7 @@ export type TYPE_NAME = (typeof TYPES)[keyof typeof TYPES]["id"];
 export const DROPZONE_CONFIG = {
   multiple: true,
   accept: {
+    "application/gpx+xml": [".gpx"],
     "text/*": [".txt", ".htm", ".html"],
     "text/csv": [".csv"],
     "application/pdf": [".pdf"],

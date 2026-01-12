@@ -5,6 +5,7 @@ from langchain_community.document_loaders.parsers.msword import MsWordParser
 from langchain_community.document_loaders.parsers.txt import TextParser
 
 HANDLERS = {
+    "application/gpx+xml": TextParser(),
     "application/pdf": PDFMinerParser(),
     "text/plain": TextParser(),
     "text/csv": TextParser(),
