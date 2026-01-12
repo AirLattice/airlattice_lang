@@ -1,4 +1,6 @@
-import { getAuthToken } from "./auth";
+import { clearAuthToken, getAuthToken } from "./auth";
+
+let redirectingForAuth = false;
 
 export function withAuthHeaders(headers: HeadersInit = {}): Headers {
   const authHeaders = new Headers(headers);
@@ -14,5 +16,11 @@ export async function authFetch(
   init: RequestInit = {},
 ) {
   const headers = withAuthHeaders(init.headers);
-  return fetch(input, { ...init, headers });
+  const response = await fetch(input, { ...init, headers });
+  if ((response.status === 401 || response.status === 403) && !redirectingForAuth) {
+    redirectingForAuth = true;
+    clearAuthToken();
+    window.location.assign("/");
+  }
+  return response;
 }
