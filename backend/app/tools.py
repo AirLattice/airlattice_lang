@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import lru_cache
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.agent_toolkits.connery import ConneryToolkit
@@ -24,6 +24,7 @@ from langchain_core.tools import Tool
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
+from app.memory import memory_namespace
 from app.upload import vstore
 
 
@@ -206,21 +207,31 @@ class DallE(BaseTool):
     ] = "Generates images from a text description using OpenAI's DALL-E model."
 
 
-RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
+RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant or remembered from prior conversations.
 If the user is referencing particular files, that is often a good hint that information may be here.
 If the user asks a vague question, they are likely meaning to look up info from this retriever, and you should call it!"""
 
 
-def get_retriever(assistant_id: str, thread_id: str):
+def get_retriever(
+    assistant_id: str, thread_id: str, user_id: Optional[str] = None
+):
+    namespaces = [namespace for namespace in (assistant_id, thread_id) if namespace]
+    if user_id:
+        namespaces.append(memory_namespace(user_id))
     return vstore.as_retriever(
-        search_kwargs={"filter": {"namespace": {"$in": [assistant_id, thread_id]}}}
+        search_kwargs={"filter": {"namespace": {"$in": namespaces}}}
     )
 
 
 @lru_cache(maxsize=5)
-def get_retrieval_tool(assistant_id: str, thread_id: str, description: str):
+def get_retrieval_tool(
+    assistant_id: str,
+    thread_id: str,
+    description: str,
+    user_id: Optional[str] = None,
+):
     return create_retriever_tool(
-        get_retriever(assistant_id, thread_id),
+        get_retriever(assistant_id, thread_id, user_id),
         "Retriever",
         description,
     )

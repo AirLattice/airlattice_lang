@@ -1,5 +1,10 @@
-import { PlusIcon, EllipsisVerticalIcon } from "@heroicons/react/24/outline";
+import {
+  ArchiveBoxIcon,
+  EllipsisVerticalIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 import { ChatListProps } from "../hooks/useChatList";
 import { cn } from "../utils/cn";
@@ -12,8 +17,11 @@ export function ChatList(props: {
   enterChat: (id: string | null) => void;
   deleteChat: (id: string) => void;
   enterConfig: (id: string | null) => void;
+  enterMemory: () => void;
 }) {
   const { currentChat, assistantConfig } = useThreadAndAssistant();
+  const location = useLocation();
+  const memoryActive = location.pathname.startsWith("/memory");
 
   // State for tracking which chat's menu is visible
   const [visibleMenu, setVisibleMenu] = useState<string | null>(null);
@@ -69,6 +77,28 @@ export function ChatList(props: {
           <PlusIcon className="h-4 w-4" />
         </span>
         <span className="truncate">New Bot</span>
+      </div>
+
+      <div
+        onClick={() => props.enterMemory()}
+        className={cn(
+          memoryActive
+            ? "bg-gray-50 text-indigo-600"
+            : "text-gray-700 hover:text-indigo-600 hover:bg-gray-50",
+          "mt-1 group flex gap-x-3 rounded-md -mx-2 p-2 leading-6 font-semibold cursor-pointer",
+        )}
+      >
+        <span
+          className={cn(
+            memoryActive
+              ? "text-indigo-600 border-indigo-600"
+              : "text-gray-400 border-gray-200 group-hover:border-indigo-600 group-hover:text-indigo-600",
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-[0.625rem] font-medium bg-white",
+          )}
+        >
+          <ArchiveBoxIcon className="h-4 w-4" />
+        </span>
+        <span className="truncate">Memory</span>
       </div>
 
       <div className="text-xs font-semibold leading-6 text-gray-400 mt-4">

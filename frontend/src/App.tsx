@@ -171,6 +171,7 @@ function App(props: { edit?: boolean }) {
           enterChat={selectChat}
           deleteChat={deleteChat}
           enterConfig={selectConfig}
+          enterMemory={() => navigate("/memory")}
         />
       }
     >

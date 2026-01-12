@@ -38,3 +38,12 @@ export interface Chat {
   updated_at: string;
   metadata: Record<string, unknown> | null;
 }
+
+export interface MemoryItem {
+  id: string;
+  content: string;
+  role: string | null;
+  created_at: string | null;
+  thread_id: string | null;
+  assistant_id: string | null;
+}

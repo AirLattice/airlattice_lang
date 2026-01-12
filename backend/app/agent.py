@@ -145,6 +145,7 @@ class ConfigurableAgent(RunnableBinding):
         thread_id: Optional[str] = "",
         retrieval_description: str = RETRIEVAL_DESCRIPTION,
         interrupt_before_action: bool = False,
+        user_id: Optional[str] = None,
         kwargs: Optional[Mapping[str, Any]] = None,
         config: Optional[Mapping[str, Any]] = None,
         **others: Any,
@@ -158,7 +159,9 @@ class ConfigurableAgent(RunnableBinding):
                         "Both assistant_id and thread_id must be provided if Retrieval tool is used"
                     )
                 _tools.append(
-                    get_retrieval_tool(assistant_id, thread_id, retrieval_description)
+                    get_retrieval_tool(
+                        assistant_id, thread_id, retrieval_description, user_id
+                    )
                 )
             else:
                 tool_config = _tool.get("config", {})
@@ -176,6 +179,7 @@ class ConfigurableAgent(RunnableBinding):
             agent=agent,
             system_message=system_message,
             retrieval_description=retrieval_description,
+            user_id=user_id,
             bound=agent_executor,
             kwargs=kwargs or {},
             config=config or {},
@@ -274,12 +278,13 @@ class ConfigurableRetrieval(RunnableBinding):
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
         assistant_id: Optional[str] = None,
         thread_id: Optional[str] = "",
+        user_id: Optional[str] = None,
         kwargs: Optional[Mapping[str, Any]] = None,
         config: Optional[Mapping[str, Any]] = None,
         **others: Any,
     ) -> None:
         others.pop("bound", None)
-        retriever = get_retriever(assistant_id, thread_id)
+        retriever = get_retriever(assistant_id, thread_id, user_id)
         if llm_type == LLMType.GPT_35_TURBO:
             llm = get_openai_llm()
         elif llm_type == LLMType.GPT_4:
@@ -305,6 +310,7 @@ class ConfigurableRetrieval(RunnableBinding):
             llm_type=llm_type,
             system_message=system_message,
             bound=chatbot,
+            user_id=user_id,
             kwargs=kwargs or {},
             config=config or {},
         )
@@ -321,6 +327,7 @@ chat_retrieval = (
         thread_id=ConfigurableField(
             id="thread_id", name="Thread ID", annotation=str, is_shared=True
         ),
+        user_id=ConfigurableField(id="user_id", name="User ID", is_shared=True),
     )
     .with_types(
         input_type=Dict[str, Any],
@@ -352,6 +359,7 @@ agent: Pregel = (
         thread_id=ConfigurableField(
             id="thread_id", name="Thread ID", annotation=str, is_shared=True
         ),
+        user_id=ConfigurableField(id="user_id", name="User ID", is_shared=True),
         tools=ConfigurableField(id="tools", name="Tools"),
         retrieval_description=ConfigurableField(
             id="retrieval_description", name="Retrieval Description"

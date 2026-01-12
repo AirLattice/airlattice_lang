@@ -4,6 +4,7 @@ from app.api.assistants import router as assistants_router
 from app.api.auth import router as auth_router
 from app.api.runs import router as runs_router
 from app.api.threads import router as threads_router
+from app.api.memory import router as memory_router
 
 router = APIRouter()
 
@@ -31,4 +32,9 @@ router.include_router(
     threads_router,
     prefix="/threads",
     tags=["threads"],
+)
+router.include_router(
+    memory_router,
+    prefix="/memory",
+    tags=["memory"],
 )

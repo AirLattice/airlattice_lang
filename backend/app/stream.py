@@ -1,5 +1,5 @@
 import functools
-from typing import Any, AsyncIterator, Dict, Optional, Sequence, Union
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, Optional, Sequence, Union
 
 import orjson
 import structlog
@@ -68,6 +68,7 @@ async def astream_state(
     app: Runnable,
     input: Union[Sequence[AnyMessage], Dict[str, Any]],
     config: RunnableConfig,
+    on_complete: Optional[Callable[[Sequence[BaseMessage]], Awaitable[None]]] = None,
 ) -> MessagesStream:
     """Stream messages from the runnable."""
     root_run_id: Optional[str] = None
@@ -111,6 +112,9 @@ async def astream_state(
                 usage = _estimate_usage(messages)
             if usage:
                 yield {"event": "usage", "data": usage}
+
+    if on_complete:
+        await on_complete(list(messages.values()))
 
 
 def _default(obj) -> Any:
