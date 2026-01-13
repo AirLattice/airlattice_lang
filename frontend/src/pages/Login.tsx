@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { setAuthToken, getAuthToken } from "../utils/auth";
+import { setAuthToken, getAuthToken, refreshAuthToken } from "../utils/auth";
 
 export function Login() {
   const [username, setUsername] = useState("");
@@ -12,9 +12,20 @@ export function Login() {
   const from = (location.state as { from?: string } | null)?.from || "/";
 
   useEffect(() => {
-    if (getAuthToken()) {
-      navigate(from, { replace: true });
-    }
+    let active = true;
+    const ensureSession = async () => {
+      let token = getAuthToken();
+      if (!token) {
+        token = await refreshAuthToken();
+      }
+      if (token && active) {
+        navigate(from, { replace: true });
+      }
+    };
+    ensureSession();
+    return () => {
+      active = false;
+    };
   }, [from, navigate]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -35,6 +46,7 @@ export function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: normalized, password }),
+        credentials: "include",
       });
       if (!response.ok) {
         const message = await response.text();

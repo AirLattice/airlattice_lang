@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { clearAuthToken, getAuthToken } from "../utils/auth";
+import { clearAuthToken, getAuthToken, refreshAuthToken } from "../utils/auth";
 import { authFetch } from "../utils/authFetch";
 
 export function AuthGate() {
@@ -9,27 +9,33 @@ export function AuthGate() {
   const location = useLocation();
 
   useEffect(() => {
-    const token = getAuthToken();
     const redirectPath = `${location.pathname}${location.search}`;
-    if (!token) {
-      navigate("/login", {
-        replace: true,
-        state: { from: redirectPath },
-      });
-      return;
-    }
-
     let active = true;
-    authFetch("/me", { headers: { Accept: "application/json" } })
-      .then((response) => {
+    const ensureSession = async () => {
+      let token = getAuthToken();
+      if (!token) {
+        token = await refreshAuthToken();
+      }
+      if (!token) {
+        if (active) {
+          navigate("/login", {
+            replace: true,
+            state: { from: redirectPath },
+          });
+        }
+        return;
+      }
+      try {
+        const response = await authFetch("/me", {
+          headers: { Accept: "application/json" },
+        });
         if (!response.ok) {
-          return Promise.reject(response.statusText);
+          throw new Error(response.statusText);
         }
         if (active) {
           setReady(true);
         }
-      })
-      .catch(() => {
+      } catch {
         clearAuthToken();
         if (active) {
           navigate("/login", {
@@ -37,7 +43,10 @@ export function AuthGate() {
             state: { from: redirectPath },
           });
         }
-      });
+      }
+    };
+
+    ensureSession();
 
     return () => {
       active = false;

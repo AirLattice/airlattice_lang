@@ -2,7 +2,7 @@ import { FormEvent, Fragment, useEffect, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
-import { clearAuthToken } from "../utils/auth";
+import { logoutSession } from "../utils/auth";
 import { authFetch } from "../utils/authFetch";
 
 export function Layout(props: {
@@ -45,8 +45,9 @@ export function Layout(props: {
   }, []);
 
   const handleLogout = () => {
-    clearAuthToken();
-    navigate("/login", { replace: true });
+    logoutSession().finally(() => {
+      navigate("/login", { replace: true });
+    });
   };
 
   const openAccount = () => {
@@ -105,8 +106,9 @@ export function Layout(props: {
         const message = await response.text();
         throw new Error(message || "Failed to delete account");
       }
-      clearAuthToken();
-      navigate("/login", { replace: true });
+      logoutSession().finally(() => {
+        navigate("/login", { replace: true });
+      });
     } catch (error) {
       setDeleteError(
         error instanceof Error ? error.message : "Failed to delete account",

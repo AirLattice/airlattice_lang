@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     auth_type: AuthType
     jwt_local: Optional[JWTSettingsLocal] = None
     jwt_oidc: Optional[JWTSettingsOIDC] = None
+    access_token_ttl_minutes: int = 60
+    refresh_token_ttl_days: int = 7
 
     @model_validator(mode="before")
     @classmethod

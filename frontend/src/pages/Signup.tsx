@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { getAuthToken, setAuthToken } from "../utils/auth";
+import { getAuthToken, refreshAuthToken, setAuthToken } from "../utils/auth";
 
 const PASSWORD_REQUIREMENTS = [
   "At least 10 characters",
@@ -36,9 +36,20 @@ export function Signup() {
   const from = (location.state as { from?: string } | null)?.from || "/";
 
   useEffect(() => {
-    if (getAuthToken()) {
-      navigate(from, { replace: true });
-    }
+    let active = true;
+    const ensureSession = async () => {
+      let token = getAuthToken();
+      if (!token) {
+        token = await refreshAuthToken();
+      }
+      if (token && active) {
+        navigate(from, { replace: true });
+      }
+    };
+    ensureSession();
+    return () => {
+      active = false;
+    };
   }, [from, navigate]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -68,6 +79,7 @@ export function Signup() {
           password,
           password_confirm: confirm,
         }),
+        credentials: "include",
       });
       if (!response.ok) {
         const message = await response.text();

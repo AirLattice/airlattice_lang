@@ -36,6 +36,9 @@ class JWTAuthBase(AuthHandler):
             payload = self.decode_token(token, self.get_decode_key(token))
         except jwt.PyJWTError as e:
             raise HTTPException(status_code=401, detail=str(e))
+        token_use = payload.get("token_use")
+        if token_use and token_use != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
 
         user, _ = await storage.get_or_create_user(payload["sub"])
         return user
