@@ -46,7 +46,9 @@ def _issue_refresh_token(sub: str) -> str:
     )
 
 
-def _set_refresh_cookie(response: Response, request: Request, refresh_token: str) -> None:
+def _set_refresh_cookie(
+    response: Response, request: Request, refresh_token: str
+) -> None:
     response.set_cookie(
         REFRESH_COOKIE_NAME,
         refresh_token,
@@ -160,7 +162,9 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(payload: LoginRequest, request: Request, response: Response) -> TokenResponse:
+async def login(
+    payload: LoginRequest, request: Request, response: Response
+) -> TokenResponse:
     if settings.auth_type != AuthType.JWT_LOCAL:
         raise HTTPException(
             status_code=400, detail="AUTH_TYPE must be jwt_local to use /login."
@@ -180,7 +184,9 @@ async def login(payload: LoginRequest, request: Request, response: Response) -> 
 
 
 @router.post("/signup", response_model=TokenResponse)
-async def signup(payload: SignupRequest, request: Request, response: Response) -> TokenResponse:
+async def signup(
+    payload: SignupRequest, request: Request, response: Response
+) -> TokenResponse:
     if settings.auth_type != AuthType.JWT_LOCAL:
         raise HTTPException(
             status_code=400, detail="AUTH_TYPE must be jwt_local to use /signup."
