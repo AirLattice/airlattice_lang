@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from threading import Lock
 from time import time
+from typing import Optional
 from uuid import uuid4
 
 
@@ -9,7 +10,7 @@ class IngestJob:
     job_id: str
     status: str = "running"
     progress: float = 0.0
-    error: str | None = None
+    error: Optional[str] = None
     total_bytes: int = 0
     processed_bytes: int = 0
     created_at: float = field(default_factory=time)
@@ -28,7 +29,7 @@ def create_job(total_bytes: int) -> IngestJob:
     return job
 
 
-def get_job(job_id: str) -> IngestJob | None:
+def get_job(job_id: str) -> Optional[IngestJob]:
     with _lock:
         return _jobs.get(job_id)
 
