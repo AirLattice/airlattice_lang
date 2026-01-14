@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useEffect, useState } from "react";
 
 const PREFIX = "langgizmo-";

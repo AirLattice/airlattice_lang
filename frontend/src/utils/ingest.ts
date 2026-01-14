@@ -2,7 +2,7 @@ import { authFetch } from "./authFetch";
 
 type IngestStatus = {
   job_id: string;
-  status: "running" | "done" | "error";
+  status: "running" | "done" | "error" | "canceled";
   progress: number;
   error?: string | null;
 };
@@ -46,7 +46,7 @@ async function waitForIngest(
   signal?: AbortSignal,
 ) {
   // Poll until the ingestion finishes.
-  while (true) {
+  for (;;) {
     if (signal?.aborted) {
       throw new DOMException("Ingest canceled", "AbortError");
     }

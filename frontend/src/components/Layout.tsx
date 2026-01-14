@@ -92,7 +92,11 @@ export function Layout(props: {
   const submitDeleteAccount = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setDeleteError(null);
-    if (!window.confirm("Delete your account and all data? This cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Delete your account and all data? This cannot be undone.",
+      )
+    ) {
       return;
     }
     setDeleteBusy(true);
@@ -265,7 +269,10 @@ export function Layout(props: {
                     Signed in as {userSub ?? "your account"}.
                   </p>
 
-                  <form className="mt-5 space-y-4" onSubmit={submitPasswordChange}>
+                  <form
+                    className="mt-5 space-y-4"
+                    onSubmit={submitPasswordChange}
+                  >
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         Current password
@@ -273,7 +280,9 @@ export function Layout(props: {
                       <input
                         type="password"
                         value={currentPassword}
-                        onChange={(event) => setCurrentPassword(event.target.value)}
+                        onChange={(event) =>
+                          setCurrentPassword(event.target.value)
+                        }
                         className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                         autoComplete="current-password"
                         required
@@ -299,7 +308,9 @@ export function Layout(props: {
                       <input
                         type="password"
                         value={newPasswordConfirm}
-                        onChange={(event) => setNewPasswordConfirm(event.target.value)}
+                        onChange={(event) =>
+                          setNewPasswordConfirm(event.target.value)
+                        }
                         className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                         autoComplete="new-password"
                         required
@@ -331,7 +342,9 @@ export function Layout(props: {
                     <input
                       type="password"
                       value={deletePassword}
-                      onChange={(event) => setDeletePassword(event.target.value)}
+                      onChange={(event) =>
+                        setDeletePassword(event.target.value)
+                      }
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
                       autoComplete="current-password"
                       required

@@ -25,7 +25,9 @@ export function useStreamState(): StreamStateProps {
   const [current, setCurrent] = useState<StreamState | null>(null);
   const [controller, setController] = useState<AbortController | null>(null);
 
-  const extractUsage = (msgs: Message[] | Record<string, any> | null | undefined) => {
+  const extractUsage = (
+    msgs: Message[] | Record<string, any> | null | undefined,
+  ) => {
     const list = Array.isArray(msgs) ? msgs : msgs?.messages;
     if (!Array.isArray(list)) return null;
     for (let i = list.length - 1; i >= 0; i -= 1) {

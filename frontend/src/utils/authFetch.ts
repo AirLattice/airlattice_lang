@@ -31,7 +31,10 @@ export async function authFetch(
     headers,
     credentials: "include",
   });
-  if ((response.status === 401 || response.status === 403) && !redirectingForAuth) {
+  if (
+    (response.status === 401 || response.status === 403) &&
+    !redirectingForAuth
+  ) {
     const url =
       typeof input === "string"
         ? input

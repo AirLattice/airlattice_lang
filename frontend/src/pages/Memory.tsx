@@ -162,9 +162,7 @@ export function MemoryPage() {
           <div className="text-sm text-red-600">{error}</div>
         )}
         {!loading && !error && (items?.length ?? 0) === 0 && (
-          <div className="text-sm text-gray-500">
-            No memories stored yet.
-          </div>
+          <div className="text-sm text-gray-500">No memories stored yet.</div>
         )}
 
         <div className="flex flex-col gap-4">
