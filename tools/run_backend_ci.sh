@@ -3,8 +3,12 @@ set -euo pipefail
 
 MIGRATE_URL="https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.deb"
 
+mkdir -p "$HOME/.cache/pip" "$HOME/.cache/pypoetry"
+
 sudo docker run --rm -t --network host \
   -v "$PWD/backend:/backend" -w /backend \
+  -v "$HOME/.cache/pip:/root/.cache/pip" \
+  -v "$HOME/.cache/pypoetry:/root/.cache/pypoetry" \
   -e POSTGRES_HOST=127.0.0.1 \
   -e POSTGRES_PORT=5433 \
   -e POSTGRES_DB=postgres \
