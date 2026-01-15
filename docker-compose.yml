@@ -79,3 +79,12 @@ services:
       - "5173:5173" # Frontend is accessible on localhost:5173
     environment:
       VITE_BACKEND_URL: "http://backend:8000"
+    networks:
+      default: {}
+      nginx-net:
+        aliases:
+          - opengpts-frontend
+
+networks:
+  nginx-net:
+    external: true
